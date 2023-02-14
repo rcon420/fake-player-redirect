@@ -1,0 +1,17 @@
+"FakeServer"
+{
+	"0"
+	{
+		"hostname" "VALVE PLS FIX :D - SourceMod Community" 
+		"online" "20" //Отображаемый онлайн на сервере. / Displayed online on the server.
+		"realonline" "-1" //После скольки человек показывать реальных игроков (-1 - показывать всегда фейковых) / After how many people show real players (-1 - always show fake ones)
+		"clientscale" "2" //На сколько умножаем онлайн, (-1 - показывать просто реальный онлайн) / How much do we multiply online, (-1 - just show real online)
+		"slots" "64" //Количество слотов на сервере / Number of slots on the server
+		"game" "JailBreak"
+		"bot" "0" //Количество отображаемых ботов на сервере / The number of displayed bots on the server
+		"vac" "0" //Отображать ли VAC защиту, к примеру защита включена, но для всех мы можем ее скрыть и сделать вид что выключена / Whether to display VAC protection, for example, protection is on, but for everyone we can hide it and pretend that it is off
+		"tags" "LastRequest, achievement, ba, bhop, jail, jailbreak, jb"
+		"redirect" "1" //Включить ли переадресацию игроков на ваш оригинальный сервер. / Whether to enable redirecting players to your original server.
+		"redirect_ip" "11.11.1.111" //Сюда указываем IP настоящего сервера, пример / Here we indicate the IP of the real server, for example  11.11.1.111:27015
+	}
+}

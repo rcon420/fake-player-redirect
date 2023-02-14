@@ -1,0 +1,34 @@
+# vim: set sts=2 ts=8 sw=2 tw=99 et ft=python:
+import os
+
+project = builder.LibraryProject('game.cstrike.ext')
+project.sources += [
+  'extension.cpp',
+  'natives.cpp',
+  'RegNatives.cpp',
+  'timeleft.cpp',
+  'forwards.cpp',
+  'util_cstrike.cpp',
+  '../../public/smsdk_ext.cpp',
+  '../../public/CDetour/detours.cpp',
+  '../../public/asm/asm.c',
+  '../../public/libudis86/decode.c',
+  '../../public/libudis86/itab.c',
+  '../../public/libudis86/syn-att.c',
+  '../../public/libudis86/syn-intel.c',
+  '../../public/libudis86/syn.c',
+  '../../public/libudis86/udis86.c',
+]
+
+for sdk_name in ['css', 'csgo']:
+  if sdk_name not in SM.sdks:
+    continue
+  sdk = SM.sdks[sdk_name]
+  for cxx in builder.targets:
+    if not cxx.target.arch in sdk.platformSpec[cxx.target.platform]:
+      continue
+
+    cxx.defines += ['HAVE_STRING_H'];
+    SM.HL2ExtConfig(project, builder, cxx, 'game.cstrike.ext.' + sdk.ext, sdk)
+
+SM.extensions += builder.Add(project)

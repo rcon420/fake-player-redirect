@@ -1,0 +1,5 @@
+"FakeNameServer"
+{
+	"fakenameplayer" "rcon420"
+	"fakenameplayer" "Dave"
+}

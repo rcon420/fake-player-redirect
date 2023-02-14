@@ -1,0 +1,65 @@
+# vim: set ts=8 sts=2 sw=2 tw=99 et ft=python: 
+# 
+# Copyright (C) 2004-2012 David Anderson
+# 
+# This file is part of SourcePawn.
+# 
+# SourcePawn is free software: you can redistribute it and/or modify it under
+# the terms of the GNU General Public License as published by the Free
+# Software Foundation, either version 3 of the License, or (at your option)
+# any later version.
+# 
+# SourcePawn is distributed in the hope that it will be useful, but WITHOUT ANY
+# WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License along with
+# SourcePawn. If not, see http://www.gnu.org/licenses/.
+#
+import os
+
+binary = KE.StaticLibrary(builder, 'libgtest')
+binary.compiler.includes += [
+  os.path.join(builder.sourcePath, 'third_party', 'googletest', 'googletest', 'include'),
+  os.path.join(builder.sourcePath, 'third_party', 'googletest', 'googletest'),
+]
+binary.sources += [
+  os.path.join('..', 'third_party', 'googletest', 'googletest', 'src', 'gtest-all.cc'),
+]
+libgtest = builder.Add(binary)
+
+binary = KE.Program(builder, 'testrunner')
+compiler = binary.compiler
+compiler.includes += [
+  os.path.join(builder.sourcePath),
+  os.path.join(builder.sourcePath, 'third_party', 'googletest', 'googletest', 'include'),
+]
+
+if compiler.like('msvc'):
+  compiler.linkflags.append('/SUBSYSTEM:CONSOLE')
+if builder.cxx.target.platform == 'linux':
+  compiler.linkflags.append('-ldl')
+compiler.linkflags.append(libgtest.binary)
+compiler.linkflags.append(KE.libamtl)
+
+binary.sources += [
+  'main.cpp',
+  'test-argparser.cpp',
+  'test-bits.cpp',
+  'test-callable.cpp',
+  'test-deque.cpp',
+  'test-flags.cpp',
+  'test-hashmap.cpp',
+  'test-inlinelist.cpp',
+  'test-priority-queue.cpp',
+  'test-refcounting.cpp',
+  'test-string.cpp',
+  'test-system.cpp',
+  'test-threadlocal-threaded.cpp',
+  'test-threadlocal-unthreaded.cpp',
+  'test-time.cpp',
+  'test-vector.cpp',
+]
+
+node = builder.Add(binary)
+builder.AddCopy(node.binary, builder.dist_folder)

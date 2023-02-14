@@ -1,0 +1,160 @@
+# vim: set sts=2 ts=8 sw=2 tw=99 et ft=python:
+import os
+import sys
+
+class KEConfig(object):
+  def __init__(self):
+    pass
+
+  def configure(self):
+    cxx = builder.DetectCxx()
+
+    builder.cxx = cxx
+    builder.dist_folder = builder.AddFolder('dist')
+
+    if cxx.like('gcc'):
+      if cxx.target.platform != 'windows':
+        if cxx.version >= 'gcc-8.0' or cxx.version >= 'clang-5.0':
+            cxx.cxxflags += ['-std=c++17']
+        else:
+            cxx.cxxflags += ['-std=c++14']
+
+        cxx.defines += [
+          'stricmp=strcasecmp',
+          '_stricmp=strcasecmp',
+          '_snprintf=snprintf',
+          '_vsnprintf=vsnprintf',
+        ]
+        cxx.linkflags += ['-lpthread']
+        if cxx.target.platform != 'mac':
+          cxx.linkflags += ['-lrt']
+      else:
+        cxx.cxxflags += [
+          '-std=c++14',
+          '-fms-compatibility-version=19',
+        ]
+
+      cxx.cflags += [
+        '-pipe',
+        '-Wall',
+        '-Werror',
+      ]
+
+      cxx.cflags += ['-fvisibility=hidden']
+      cxx.cxxflags += ['-fvisibility-inlines-hidden']
+      # -Wunused-function breaks test_flags.cpp
+      cxx.cxxflags += ['-Wno-unused-function']
+      if cxx.like('clang'):
+        cxx.cxxflags += ['-Wno-implicit-exception-spec-mismatch']
+      elif cxx.like('gcc'):
+        cxx.cxxflags += ['-Wformat-truncation=0']
+
+      cxx.cxxflags += [
+        '-fno-exceptions',
+        '-fno-threadsafe-statics',
+      ]
+
+      cxx.cflags += ['-mfpmath=sse']
+    elif cxx.like('msvc'):
+      if builder.options.debug == '1':
+        cxx.cflags += ['/MTd']
+        cxx.linkflags += ['/NODEFAULTLIB:libcmt']
+      else:
+        cxx.cflags += ['/MT']
+      cxx.defines += [
+        '_CRT_SECURE_NO_DEPRECATE',
+        '_CRT_SECURE_NO_WARNINGS',
+        '_CRT_NONSTDC_NO_DEPRECATE',
+        '_ITERATOR_DEBUG_LEVEL=0',
+      ]
+      cxx.cflags += [
+        '/W3',
+      ]
+      cxx.cxxflags += [
+        '/EHsc',
+        '/GR-',
+        '/TP',
+      ]
+      cxx.linkflags += [
+        '/MACHINE:X86',
+        'kernel32.lib',
+        'user32.lib',
+        'gdi32.lib',
+        'winspool.lib',
+        'comdlg32.lib',
+        'advapi32.lib',
+        'shell32.lib',
+        'ole32.lib',
+        'oleaut32.lib',
+        'uuid.lib',
+        'odbc32.lib',
+        'odbccp32.lib',
+      ] 
+
+    # Optimization
+    if builder.options.opt == '1':
+      cxx.defines += ['NDEBUG']
+      if cxx.like('gcc'):
+        cxx.cflags += ['-O3']
+      elif cxx.like('msvc'):
+        cxx.cflags += ['/Ox']
+        cxx.linkflags += ['/OPT:ICF', '/OPT:REF']
+
+    # Debugging
+    if builder.options.debug == '1':
+      cxx.defines += ['DEBUG', '_DEBUG']
+      if cxx.like('msvc'):
+        cxx.cflags += ['/Od', '/RTC1']
+        if cxx.version >= 1600:
+          cxx.cflags += ['/d2Zi+']
+
+    # This needs to be after our optimization flags which could otherwise disable it.
+    if cxx.like('msvc'):
+      # Don't omit the frame pointer.
+      cxx.cflags += ['/Oy-']
+
+    # Platform-specifics
+    if cxx.target.platform == 'linux':
+      cxx.defines += ['_LINUX', 'POSIX']
+      if cxx.like('gcc'):
+        cxx.linkflags += ['-static-libgcc']
+      elif cxx.like('clang'):
+        cxx.linkflags += ['-lgcc_eh']
+    elif cxx.target.platform == 'mac':
+      cxx.defines += ['OSX', '_OSX', 'POSIX']
+      cxx.cflags += ['-mmacosx-version-min=10.7']
+      cxx.linkflags += [
+        '-mmacosx-version-min=10.7',
+        '-lstdc++',
+        '-stdlib=libc++',
+      ]
+      cxx.cxxflags += ['-stdlib=libc++']
+    elif cxx.target.platform == 'windows':
+      cxx.defines += ['WIN32', '_WINDOWS']
+
+  def Program(self, context, name):
+    compiler = context.cxx.clone()
+    binary = compiler.Program(name)
+    return binary
+
+  def StaticLibrary(self, context, name):
+    compiler = context.cxx.clone()
+    binary = compiler.StaticLibrary(name)
+    return binary
+
+KE = KEConfig()
+KE.configure()
+
+KE.libamtl = builder.Build('amtl/AMBuilder', {
+    'Configure': lambda builder, name: KE.StaticLibrary(builder, name),
+})
+KE.libamtl = KE.libamtl.binary
+
+builder.Build(
+  [
+    'tests/AMBuild.tests',
+  ],
+  {
+    'KE': KE,
+  }
+)

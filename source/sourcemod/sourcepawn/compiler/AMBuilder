@@ -1,0 +1,80 @@
+# vim: set sts=2 ts=8 sw=2 tw=99 et ft=python: 
+import os
+
+binary = Root.Program(builder, 'spcomp')
+compiler = binary.compiler
+compiler.includes += [
+  os.path.join(SP.amtl, 'amtl'),
+  os.path.join(SP.amtl),
+  os.path.join(builder.currentSourcePath, '..', 'include'),
+  os.path.join(builder.currentSourcePath, '..', 'third_party'),
+  os.path.join(builder.buildPath, 'includes'),
+  os.path.join(builder.buildPath, builder.buildFolder),
+  os.path.join(builder.currentSourcePath, '..'),
+]
+
+if compiler.like('gcc'):
+  compiler.cflags += [
+    '-Wno-format',
+  ]
+  compiler.c_only_flags += ['-std=c99']
+
+  if compiler.like('emscripten'):
+    compiler.postlink += ['-lnodefs.js']
+  else:
+    compiler.postlink += ['-lstdc++']
+if compiler.family == 'clang':
+  compiler.cxxflags += [
+    '-Wno-implicit-exception-spec-mismatch',
+  ]
+if compiler.family == 'gcc':
+  compiler.cflags += [
+    '-Wno-maybe-uninitialized',
+  ]
+  if compiler.version >= '4.6':
+    compiler.cxxflags += ['-Wno-unused-but-set-variable']
+
+if compiler.target.platform == 'linux':
+  compiler.defines += [
+    '_GNU_SOURCE'
+  ]
+elif compiler.target.platform == 'mac':
+  compiler.defines += [
+    'DARWIN',
+  ]
+
+binary.sources += [
+  'assembler.cpp',
+  'code-generator.cpp',
+  'emitter.cpp',
+  'errors.cpp',
+  'expressions.cpp',
+  'lexer.cpp',
+  'libpawnc.cpp',
+  'memfile.cpp',
+  'name-resolution.cpp',
+  'new-parser.cpp',
+  'optimizer.cpp',
+  'parser.cpp',
+  'pawncc.cpp',
+  'pool-allocator.cpp',
+  'sci18n.cpp',
+  'sclist.cpp',
+  'sctracker.cpp',
+  'scvars.cpp',
+  'semantics.cpp',
+  'sp_symhash.cpp',
+  'types.cpp',
+]
+
+if compiler.target.platform == 'linux' and not compiler.like('emscripten'):
+  compiler.defines += ['ENABLE_BINRELOC']
+  binary.sources.append('binreloc.c')
+
+binary.compiler.linkflags[0:0] = [
+  SP.libsmx[compiler.target.arch].binary,
+  SP.zlib[compiler.target.arch],
+  SP.libamtl[compiler.target.arch],
+]
+
+rvalue = builder.Add(binary)
